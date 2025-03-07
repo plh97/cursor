@@ -3,43 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>日本語50音自己テスト</title>
+    <title>平仮名ドラッグ&ドロップ練習</title>
     <style>
         body {
-            font-family: sans-serif;
-            max-width: 800px;
+            font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
             text-align: center;
+            background-color: #f8f9fa;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
-        .question {
-            font-size: 48px;
-            margin: 20px;
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 2em;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
         }
-        .answer-input {
-            font-size: 24px;
+
+        .container {
+            display: flex;
+            gap: 20px;
+            flex: 1;
+        }
+
+        .hiragana-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+            padding: 15px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            flex: 2;
+        }
+
+        .drop-zone {
+            border: 2px dashed #cbd5e0;
             padding: 10px;
-            margin: 10px;
-        }
-        .button {
-            font-size: 18px;
-            padding: 10px 20px;
-            margin: 10px;
-        }
-        .result {
+            min-height: 40px;
             font-size: 24px;
-            margin: 20px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .drop-zone::after {
+            content: attr(data-romaji);
+            position: absolute;
+            bottom: 2px;
+            right: 5px;
+            font-size: 12px;
+            color: #999;
+            opacity: 0.7;
+        }
+
+        .drop-zone:hover {
+            border-color: #4a5568;
+            background-color: rgba(203, 213, 224, 0.1);
+        }
+
+        .hiragana-pool {
+            display: flex;
+            flex-direction: column;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 15px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            flex: 1;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .draggable {
+            font-size: 24px;
+            padding: 8px 15px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            cursor: move;
+            user-select: none;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .draggable:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .draggable.dragging {
+            opacity: 0.6;
+            transform: scale(1.05);
+        }
+
+        .row-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #666;
+            background: #f0f0f0;
+            border-radius: 6px;
         }
     </style>
 </head>
 <body>
-    <h1>50音自己テスト</h1>
-    <div class="question" id="question"></div>
-    <input type="text" class="answer-input" id="answer" placeholder="ローマ字で入力してください">
-    <br>
-    <button class="button" onclick="checkAnswer()">確認</button>
-    <button class="button" onclick="nextQuestion()">次の問題</button>
-    <div class="result" id="result"></div>
+    <h1>平仮名ドラッグ&ドロップ練習</h1>
+    <div class="container">
+        <div class="hiragana-grid" id="hiraganaGrid"></div>
+        <div class="hiragana-pool" id="hiraganaPool"></div>
+    </div>
 
     <script>
         const hiragana = [
@@ -54,7 +134,7 @@
             'ら','り','る','れ','ろ',
             'わ','を','ん'
         ];
-        
+
         const romaji = [
             'a','i','u','e','o',
             'ka','ki','ku','ke','ko',
@@ -68,30 +148,84 @@
             'wa','wo','n'
         ];
 
-        let currentIndex;
-
-        function nextQuestion() {
-            document.getElementById('answer').value = '';
-            document.getElementById('result').textContent = '';
-            currentIndex = Math.floor(Math.random() * hiragana.length);
-            document.getElementById('question').textContent = hiragana[currentIndex];
-        }
-
-        function checkAnswer() {
-            const userAnswer = document.getElementById('answer').value.toLowerCase();
-            const correctAnswer = romaji[currentIndex];
+        function createGrid() {
+            const grid = document.getElementById('hiraganaGrid');
+            let currentRow = -1;
             
-            if(userAnswer === correctAnswer) {
-                document.getElementById('result').textContent = '正解！';
-                document.getElementById('result').style.color = 'green';
-            } else {
-                document.getElementById('result').textContent = `不正解。正解は ${correctAnswer} です。`;
-                document.getElementById('result').style.color = 'red';
-            }
+            // Add row label first
+            const label = document.createElement('div');
+            label.className = 'row-label';
+            grid.appendChild(label);
+            
+            hiragana.forEach((char, index) => {
+                if (index % 5 === 0) {
+                    if (index !== 0) {
+                        // Add empty cell to start new row
+                        const label = document.createElement('div');
+                        label.className = 'row-label';
+                        grid.appendChild(label);
+                    }
+                }
+                
+                const dropZone = document.createElement('div');
+                dropZone.className = 'drop-zone';
+                dropZone.dataset.correct = char;
+                dropZone.dataset.romaji = romaji[index];
+                grid.appendChild(dropZone);
+            });
         }
 
-        // 最初の問題を表示
-        nextQuestion();
+        function createPool() {
+            const pool = document.getElementById('hiraganaPool');
+            const shuffledHiragana = [...hiragana].sort(() => Math.random() - 0.5);
+            
+            shuffledHiragana.forEach(char => {
+                const draggable = document.createElement('div');
+                draggable.className = 'draggable';
+                draggable.draggable = true;
+                draggable.textContent = char;
+                
+                draggable.addEventListener('dragstart', e => {
+                    draggable.classList.add('dragging');
+                });
+                
+                draggable.addEventListener('dragend', e => {
+                    draggable.classList.remove('dragging');
+                });
+                
+                pool.appendChild(draggable);
+            });
+        }
+
+        function initializeDragAndDrop() {
+            const dropZones = document.querySelectorAll('.drop-zone');
+            
+            dropZones.forEach(zone => {
+                zone.addEventListener('dragover', e => {
+                    e.preventDefault();
+                });
+                
+                zone.addEventListener('drop', e => {
+                    e.preventDefault();
+                    const draggable = document.querySelector('.dragging');
+                    if (draggable) {
+                        if (zone.children.length === 0) {
+                            zone.appendChild(draggable);
+                            if (draggable.textContent === zone.dataset.correct) {
+                                zone.style.backgroundColor = '#e6ffe6';
+                            } else {
+                                zone.style.backgroundColor = '#ffe6e6';
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
+        // Initialize the game
+        createGrid();
+        createPool();
+        initializeDragAndDrop();
     </script>
 </body>
 </html>
