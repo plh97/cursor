@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>平假名练习</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            display: flex;
+            gap: 30px;
+            padding: 20px;
+            width: 1000px;
+            margin: 80px auto 0;
+        }
+        .page-title {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            margin: 0;
+            color: #333;
+            background-color: rgba(245, 245, 245, 0.9);
+            padding: 10px 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        .target-area {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            width: 520px;
+            min-height: 600px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .target-area > div {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: flex-start;
+        }
+        .source-area {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            width: 520px;
+            min-height: 600px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-content: flex-start;
+            justify-content: flex-start;
+        }
+        .hiragana-slot {
+            width: 80px;
+            height: 80px;
+            border: 2px dashed #bbb;
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 32px;
+            background-color: #fafafa;
+            transition: all 0.2s ease;
+            position: relative;
+            box-sizing: border-box;
+        }
+        .hiragana-slot::after {
+            content: attr(data-romaji);
+            position: absolute;
+            bottom: 4px;
+            font-size: 14px;
+            color: #999;
+        }
+        .hiragana-slot:hover {
+            background-color: #f0f0f0;
+        }
+        .hiragana-item {
+            width: 80px;
+            height: 80px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 32px;
+            background-color: white;
+            cursor: grab;
+            transition: all 0.2s ease;
+        }
+        .hiragana-item:hover {
+            background-color: #f9f9f9;
+            transform: scale(1.05);
+        }
+        .hiragana-item:active {
+            cursor: grabbing;
+        }
+        .filled {
+            border-style: solid;
+        }
+        .correct {
+            border-color: #4CAF50;
+            background-color: #E8F5E9;
+        }
+        .incorrect {
+            border-color: #F44336;
+            background-color: #FFEBEE;
+        }
+        .reset-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .reset-button:hover {
+            background-color: #0b7dda;
+        }
+        .score-display {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(245, 245, 245, 0.9);
+            padding: 10px 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-size: 18px;
+            color: #333;
+        }
+        .win-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(76, 175, 80, 0.9);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            font-size: 24px;
+            z-index: 2000;
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <h1 class="page-title">平假名练习</h1>
+    <div class="container">
+        <div id="targetArea" class="target-area"></div>
+        <div id="sourceArea" class="source-area"></div>
+    </div>
+    <div id="scoreDisplay" class="score-display">得分: 0/0</div>
+    <button id="resetButton" class="reset-button">重置</button>
+
+    <script>
+        try {
+            // Model
+            class HiraganaModel {
+                constructor() {
+                    this.hiragana = [
+                        ['あ', 'い', 'う', 'え', 'お'],
+                        ['か', 'き', 'く', 'け', 'こ'],
+                        ['さ', 'し', 'す', 'せ', 'そ'],
+                        ['た', 'ち', 'つ', 'て', 'と'],
+                        ['な', 'に', 'ぬ', 'ね', 'の'],
+                        ['は', 'ひ', 'ふ', 'へ', 'ほ'],
+                        ['ま', 'み', 'む', 'め', 'も'],
+                        ['や', 'ゆ', 'よ'],
+                        ['ら', 'り', 'る', 'れ', 'ろ'],
+                        ['わ', 'を', 'ん']
+                    ];
+                    
+                    this.romaji = [
+                        ['a', 'i', 'u', 'e', 'o'],
+                        ['ka', 'ki', 'ku', 'ke', 'ko'],
+                        ['sa', 'shi', 'su', 'se', 'so'],
+                        ['ta', 'chi', 'tsu', 'te', 'to'],
+                        ['na', 'ni', 'nu', 'ne', 'no'],
+                        ['ha', 'hi', 'fu', 'he', 'ho'],
+                        ['ma', 'mi', 'mu', 'me', 'mo'],
+                        ['ya', 'yu', 'yo'],
+                        ['ra', 'ri', 'ru', 're', 'ro'],
+                        ['wa', 'wo', 'n']
+                    ];
+                    
+                    // 创建平假名到罗马音的映射
+                    this.hiraganaToRomaji = this.createHiraganaToRomajiMap();
+                    
+                    // 创建所有平假名的一维数组并打乱顺序
+                    this.shuffledHiragana = this.shuffle(this.hiragana.flat());
+                    
+                    // 计分相关
+                    this.totalQuestions = this.shuffledHiragana.length;
+                    this.correctAnswers = 0;
+                }
+                
+                createHiraganaToRomajiMap() {
+                    const map = new Map();
+                    this.hiragana.forEach((row, i) => {
+                        row.forEach((char, j) => {
+                            map.set(char, this.romaji[i][j]);
+                        });
+                    });
+                    return map;
+                }
+
+                shuffle(array) {
+                    for (let i = array.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [array[i], array[j]] = [array[j], array[i]];
+                    }
+                    return array;
+                }
+
+                checkAnswer(hiragana, romaji) {
+                    return this.hiraganaToRomaji.get(hiragana) === romaji;
+                }
+                
+                updateScore(isCorrect) {
+                    if (isCorrect) {
+                        this.correctAnswers++;
+                    }
+                    return {
+                        correct: this.correctAnswers,
+                        total: this.totalQuestions,
+                        isAllCorrect: this.correctAnswers === this.totalQuestions
+                    };
+                }
+            }
+
+            // View
+            class HiraganaView {
+                constructor() {
+                    this.targetArea = document.getElementById('targetArea');
+                    this.sourceArea = document.getElementById('sourceArea');
+                    this.resetButton = document.getElementById('resetButton');
+                    this.scoreDisplay = document.getElementById('scoreDisplay');
+                    
+                    if (!this.targetArea || !this.sourceArea || !this.resetButton || !this.scoreDisplay) {
+                        throw new Error('Required DOM elements not found');
+                    }
+                    
+                    this.resetButton.addEventListener('click', () => this.resetGame());
+                    this.filledSlots = 0;
+                }
+
+                renderTargetArea(hiragana, romaji) {
+                    try {
+                        this.targetArea.innerHTML = '';
+                        hiragana.forEach((row, i) => {
+                            const rowDiv = document.createElement('div');
+                            row.forEach((_, j) => {
+                                const slot = document.createElement('div');
+                                slot.className = 'hiragana-slot';
+                                slot.dataset.romaji = romaji[i][j];
+                                slot.addEventListener('dragover', e => e.preventDefault());
+                                slot.addEventListener('drop', e => this.handleDrop(e));
+                                slot.addEventListener('dblclick', e => {
+                                    if (e.target.classList.contains('filled')) {
+                                        if (e.target.classList.contains('correct')) {
+                                            this.model.correctAnswers--;
+                                        }
+                                        this.filledSlots--;
+                                        this.updateScoreDisplay();
+                                    }
+                                    e.target.textContent = '';
+                                    e.target.classList.remove('filled', 'correct', 'incorrect');
+                                });
+                                rowDiv.appendChild(slot);
+                            });
+                            this.targetArea.appendChild(rowDiv);
+                        });
+                    } catch (error) {
+                        console.error('Error in renderTargetArea:', error);
+                    }
+                }
+
+                renderSourceArea(shuffledHiragana) {
+                    try {
+                        this.sourceArea.innerHTML = '';
+                        shuffledHiragana.forEach(char => {
+                            const item = document.createElement('div');
+                            item.className = 'hiragana-item';
+                            item.draggable = true;
+                            item.textContent = char;
+                            item.addEventListener('dragstart', e => this.handleDragStart(e));
+                            this.sourceArea.appendChild(item);
+                        });
+                    } catch (error) {
+                        console.error('Error in renderSourceArea:', error);
+                    }
+                }
+
+                handleDragStart(e) {
+                    try {
+                        e.dataTransfer.setData('text/plain', e.target.textContent);
+                    } catch (error) {
+                        console.error('Error in handleDragStart:', error);
+                    }
+                }
+
+                handleDrop(e) {
+                    try {
+                        e.preventDefault();
+                        const data = e.dataTransfer.getData('text/plain');
+                        const target = e.target;
+                        
+                        if (!target.textContent) {
+                            target.textContent = data;
+                            target.classList.add('filled');
+                            this.filledSlots++;
+                            
+                            // 检查答案是否正确
+                            const isCorrect = this.model.checkAnswer(data, target.dataset.romaji);
+                            target.classList.add(isCorrect ? 'correct' : 'incorrect');
+                            
+                            // 更新分数
+                            const scoreInfo = this.model.updateScore(isCorrect);
+                            this.updateScoreDisplay();
+                            
+                            // 检查是否全部答对
+                            if (this.filledSlots === this.model.totalQuestions && scoreInfo.isAllCorrect) {
+                                this.showWinMessage();
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error in handleDrop:', error);
+                    }
+                }
+                
+                updateScoreDisplay() {
+                    this.scoreDisplay.textContent = `得分: ${this.model.correctAnswers}/${this.model.totalQuestions}`;
+                }
+                
+                showWinMessage() {
+                    const winMessage = document.createElement('div');
+                    winMessage.className = 'win-message';
+                    winMessage.textContent = '恭喜你！全部答对了！';
+                    document.body.appendChild(winMessage);
+                    
+                    setTimeout(() => {
+                        winMessage.remove();
+                    }, 3000);
+                }
+                
+                resetGame() {
+                    try {
+                        // 移除胜利消息（如果存在）
+                        const existingMessage = document.querySelector('.win-message');
+                        if (existingMessage) {
+                            existingMessage.remove();
+                        }
+                        
+                        const controller = new HiraganaController();
+                    } catch (error) {
+                        console.error('Error resetting game:', error);
+                    }
+                }
+            }
+
+            // Controller
+            class HiraganaController {
+                constructor() {
+                    try {
+                        this.model = new HiraganaModel();
+                        this.view = new HiraganaView();
+                        this.view.model = this.model; // 将model引用传递给view
+                        this.init();
+                    } catch (error) {
+                        console.error('Error initializing HiraganaController:', error);
+                    }
+                }
+
+                init() {
+                    try {
+                        this.view.renderTargetArea(this.model.hiragana, this.model.romaji);
+                        this.view.renderSourceArea(this.model.shuffledHiragana);
+                        this.view.updateScoreDisplay();
+                    } catch (error) {
+                        console.error('Error in init:', error);
+                    }
+                }
+            }
+
+            // Initialize app
+            window.addEventListener('DOMContentLoaded', () => {
+                try {
+                    new HiraganaController();
+                } catch (error) {
+                    console.error('Error initializing app:', error);
+                }
+            });
+        } catch (error) {
+            console.error('Critical error:', error);
+        }
+    </script>
+</body>
+</html>
