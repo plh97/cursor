@@ -16,10 +16,8 @@
             align-items: center;
         }
         .container {
-            display: flex;
-            gap: 30px;
             padding: 20px;
-            width: 1000px;
+            width: 800px;
             margin: 80px auto 0;
         }
         .page-title {
@@ -35,102 +33,69 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             z-index: 1000;
         }
-        .target-area {
+        .hiragana-area {
             border: 2px solid #ddd;
             border-radius: 8px;
             padding: 20px;
-            width: 520px;
-            min-height: 600px;
-            background-color: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .target-area > div {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: flex-start;
-        }
-        .source-area {
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            width: 520px;
+            width: 100%;
             min-height: 600px;
             background-color: white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 15px;
             align-content: flex-start;
             justify-content: flex-start;
         }
-        .hiragana-slot {
-            width: 80px;
-            height: 80px;
-            border: 2px dashed #bbb;
-            border-radius: 6px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 32px;
-            background-color: #fafafa;
-            transition: all 0.2s ease;
-            position: relative;
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-        }
-        .hiragana-slot::after {
-            content: attr(data-romaji);
-            position: absolute;
-            bottom: 4px;
-            font-size: 14px;
-            color: #999;
-        }
-        .hiragana-slot:hover {
-            background-color: #f0f0f0;
-        }
-        .hiragana-item {
-            width: 80px;
-            height: 80px;
+        .hiragana-card {
+            width: 120px;
+            height: 150px;
             border: 2px solid #ddd;
             border-radius: 6px;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            font-size: 32px;
             background-color: white;
-            cursor: grab;
             transition: all 0.2s ease;
             user-select: none;
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
-            touch-action: none;
             box-sizing: border-box;
         }
-        .hiragana-item:hover {
-            background-color: #f9f9f9;
-            transform: scale(1.05);
+        .hiragana-display {
+            width: 100%;
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;            font-size: 32px;
+            border-bottom: 1px solid #eee;
         }
-        .hiragana-item:active {
-            cursor: grabbing;
+        .input-container {
+            width: 100%;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
         }
-        .filled {
-            border-style: solid;
+        .romaji-input {
+            width: 90%;
+            padding: 5px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
         }
         .correct {
             border-color: #4CAF50;
             background-color: #E8F5E9;
+            animation: correctPulse 0.5s ease;
         }
         .incorrect {
             border-color: #F44336;
             background-color: #FFEBEE;
+            animation: incorrectShake 0.5s ease;
         }
         .reset-button {
             position: fixed;
@@ -144,9 +109,14 @@
             cursor: pointer;
             font-size: 16px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: all 0.2s ease;
         }
         .reset-button:hover {
             background-color: #0b7dda;
+            transform: scale(1.05);
+        }
+        .reset-button:active {
+            transform: scale(0.98);
         }
         .score-display {
             position: fixed;
@@ -159,6 +129,10 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             font-size: 18px;
             color: #333;
+            transition: all 0.3s ease;
+        }
+        .score-update {
+            animation: scoreUpdate 0.5s ease;
         }
         .win-message {
             position: fixed;
@@ -172,43 +146,71 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
             font-size: 24px;
             z-index: 2000;
-            animation: fadeIn 0.5s ease-in;
+            animation: bounceIn 0.8s ease;
         }
-        .hiragana-item.used {
-            opacity: 0.5;
-            cursor: not-allowed;
-            pointer-events: none;
+        .input-status {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-top: 5px;
+        }
+        .status-correct {
+            background-color: #4CAF50;
+        }
+        .status-incorrect {
+            background-color: #F44336;
+        }
+        @keyframes correctPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        @keyframes incorrectShake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
         }
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
         }
+        @keyframes bounceIn {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            60% { transform: translate(-50%, -50%) scale(1.1); }
+            80% { transform: translate(-50%, -50%) scale(0.9); }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        @keyframes scoreUpdate {
+            0% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.2); }
+            100% { transform: translateX(-50%) scale(1); }
+        }
         
         /* 移动设备适配 */
         @media (max-width: 1024px) {
             .container {
-                flex-direction: column;
                 width: 100%;
-                gap: 20px;
             }
-            .target-area, .source-area {
-                width: 100%;
-                min-height: auto;
+            .hiragana-card {
+                width: 100px;
+                height: 130px;
             }
-            .hiragana-slot, .hiragana-item {
-                width: 60px;
-                height: 60px;
-                font-size: 24px;
+            .hiragana-display {
+                font-size: 28px;
             }
         }
         
         @media (max-width: 600px) {
-            .hiragana-slot, .hiragana-item {
-                width: 50px;
-                height: 50px;
-                font-size: 20px;
+            .hiragana-card {
+                width: 80px;
+                height: 120px;
             }
-            .hiragana-slot::after {
+            .hiragana-display {
+                font-size: 24px;
+            }
+            .romaji-input {
                 font-size: 12px;
             }
         }
@@ -217,8 +219,7 @@
 <body>
     <h1 class="page-title">平假名练习</h1>
     <div class="container">
-        <div id="targetArea" class="target-area"></div>
-        <div id="sourceArea" class="source-area"></div>
+        <div id="hiraganaArea" class="hiragana-area"></div>
     </div>
     <div id="scoreDisplay" class="score-display">得分: 0/0</div>
     <button id="resetButton" class="reset-button">重置</button>
@@ -256,16 +257,24 @@
                     
                     // 创建平假名到罗马音的映射
                     this.hiraganaToRomaji = this.createHiraganaToRomajiMap();
+                    this.romajiToHiragana = this.createRomajiToHiraganaMap();
                     
                     // 创建所有平假名的一维数组并打乱顺序
-                    this.shuffledHiragana = this.shuffle(this.hiragana.flat());
+                    this.allHiragana = this.hiragana.flat();
+                    this.shuffledHiragana = this.shuffle([...this.allHiragana]);
                     
                     // 计分相关
                     this.totalQuestions = this.shuffledHiragana.length;
                     this.correctAnswers = 0;
                     
-                    // 记录已使用的平假名
-                    this.usedHiragana = new Set();
+                    // 每个平假名的尝试记录
+                    this.attempts = new Map();
+                    this.shuffledHiragana.forEach(char => {
+                        this.attempts.set(char, {
+                            correct: false,
+                            attempts: 0
+                        });
+                    });
                 }
                 
                 createHiraganaToRomajiMap() {
@@ -273,6 +282,16 @@
                     this.hiragana.forEach((row, i) => {
                         row.forEach((char, j) => {
                             map.set(char, this.romaji[i][j]);
+                        });
+                    });
+                    return map;
+                }
+                
+                createRomajiToHiraganaMap() {
+                    const map = new Map();
+                    this.romaji.forEach((row, i) => {
+                        row.forEach((char, j) => {
+                            map.set(char, this.hiragana[i][j]);
                         });
                     });
                     return map;
@@ -286,14 +305,19 @@
                     return array;
                 }
 
-                checkAnswer(hiragana, romaji) {
-                    return this.hiraganaToRomaji.get(hiragana) === romaji;
+                checkAnswer(romaji, hiragana) {
+                    return this.hiraganaToRomaji.get(hiragana) === romaji.toLowerCase();
                 }
                 
-                updateScore(isCorrect) {
-                    if (isCorrect) {
+                recordAttempt(hiragana, isCorrect) {
+                    const record = this.attempts.get(hiragana);
+                    record.attempts++;
+                    
+                    if (isCorrect && !record.correct) {
+                        record.correct = true;
                         this.correctAnswers++;
                     }
+                    
                     return {
                         correct: this.correctAnswers,
                         total: this.totalQuestions,
@@ -301,267 +325,123 @@
                     };
                 }
                 
-                markHiraganaAsUsed(hiragana) {
-                    this.usedHiragana.add(hiragana);
-                }
-                
-                isHiraganaUsed(hiragana) {
-                    return this.usedHiragana.has(hiragana);
-                }
-                
-                removeHiraganaFromUsed(hiragana) {
-                    this.usedHiragana.delete(hiragana);
+                getRomajiForHiragana(hiragana) {
+                    return this.hiraganaToRomaji.get(hiragana);
                 }
             }
 
             // View
             class HiraganaView {
                 constructor() {
-                    this.targetArea = document.getElementById('targetArea');
-                    this.sourceArea = document.getElementById('sourceArea');
+                    this.hiraganaArea = document.getElementById('hiraganaArea');
                     this.resetButton = document.getElementById('resetButton');
                     this.scoreDisplay = document.getElementById('scoreDisplay');
                     
-                    if (!this.targetArea || !this.sourceArea || !this.resetButton || !this.scoreDisplay) {
+                    if (!this.hiraganaArea || !this.resetButton || !this.scoreDisplay) {
                         throw new Error('Required DOM elements not found');
                     }
                     
                     this.resetButton.addEventListener('click', () => this.resetGame());
-                    this.filledSlots = 0;
-                    this.draggedItemElement = null;
-                    
-                    // 检测是否为触摸设备
-                    this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-                    if (this.isTouchDevice) {
-                        this.setupTouchEvents();
-                    }
-                }
-                
-                setupTouchEvents() {
-                    // 为移动设备添加触摸事件支持
-                    document.addEventListener('touchmove', function(e) {
-                        if (e.target.classList.contains('hiragana-item') && !e.target.classList.contains('used')) {
-                            e.preventDefault(); // 防止页面滚动
-                        }
-                    }, { passive: false });
                 }
 
-                renderTargetArea(hiragana, romaji) {
+                renderHiraganaArea(shuffledHiragana) {
                     try {
-                        this.targetArea.innerHTML = '';
-                        hiragana.forEach((row, i) => {
-                            const rowDiv = document.createElement('div');
-                            row.forEach((_, j) => {
-                                const slot = document.createElement('div');
-                                slot.className = 'hiragana-slot';
-                                slot.dataset.romaji = romaji[i][j];
-                                slot.addEventListener('dragover', e => e.preventDefault());
-                                slot.addEventListener('drop', e => this.handleDrop(e));
-                                slot.addEventListener('dblclick', e => {
-                                    if (e.target.classList.contains('filled')) {
-                                        if (e.target.classList.contains('correct')) {
-                                            this.model.correctAnswers--;
-                                        }
-                                        this.filledSlots--;
-                                        
-                                        // 将平假名标记为未使用
-                                        const hiragana = e.target.textContent;
-                                        this.model.removeHiraganaFromUsed(hiragana);
-                                        
-                                        // 恢复源区域中对应的平假名项
-                                        const sourceItems = this.sourceArea.querySelectorAll('.hiragana-item');
-                                        sourceItems.forEach(item => {
-                                            if (item.textContent === hiragana) {
-                                                item.classList.remove('used');
-                                                item.draggable = true;
-                                            }
-                                        });
-                                        
-                                        this.updateScoreDisplay();
-                                    }
-                                    e.target.textContent = '';
-                                    e.target.classList.remove('filled', 'correct', 'incorrect');
-                                });
-                                rowDiv.appendChild(slot);
-                            });
-                            this.targetArea.appendChild(rowDiv);
-                        });
-                    } catch (error) {
-                        console.error('Error in renderTargetArea:', error);
-                    }
-                }
-
-                renderSourceArea(shuffledHiragana) {
-                    try {
-                        this.sourceArea.innerHTML = '';
+                        this.hiraganaArea.innerHTML = '';
                         shuffledHiragana.forEach(char => {
-                            const item = document.createElement('div');
-                            item.className = 'hiragana-item';
-                            item.draggable = true;
-                            item.textContent = char;
-                            item.addEventListener('dragstart', e => this.handleDragStart(e));
+                            const card = document.createElement('div');
+                            card.className = 'hiragana-card';
+                            card.dataset.hiragana = char;
                             
-                            // 添加触摸事件支持
-                            if (this.isTouchDevice) {
-                                this.addTouchDragEvents(item);
-                            }
+                            // 平假名显示区域
+                            const display = document.createElement('div');
+                            display.className = 'hiragana-display';
+                            display.textContent = char;
                             
-                            this.sourceArea.appendChild(item);
+                            // 输入区域
+                            const inputContainer = document.createElement('div');
+                            inputContainer.className = 'input-container';
+                            
+                            // 输入框
+                            const input = document.createElement('input');
+                            input.type = 'text';
+                            input.className = 'romaji-input';
+                            input.placeholder = '输入罗马音';
+                            
+                            // 状态指示器
+                            const statusIndicator = document.createElement('div');
+                            statusIndicator.className = 'input-status';
+                            
+                            // 添加输入事件
+                            input.addEventListener('keypress', (e) => {
+                                if (e.key === 'Enter') {
+                                    this.checkCardAnswer(card, input, statusIndicator);
+                                }
+                            });
+                            
+                            // 添加失去焦点事件
+                            input.addEventListener('blur', () => {
+                                if (input.value.trim()) {
+                                    this.checkCardAnswer(card, input, statusIndicator);
+                                }
+                            });
+                            
+                            inputContainer.appendChild(input);
+                            inputContainer.appendChild(statusIndicator);
+                            
+                            card.appendChild(display);
+                            card.appendChild(inputContainer);
+                            
+                            this.hiraganaArea.appendChild(card);
                         });
                     } catch (error) {
-                        console.error('Error in renderSourceArea:', error);
+                        console.error('Error in renderHiraganaArea:', error);
                     }
                 }
                 
-                addTouchDragEvents(element) {
-                    let touchStartX, touchStartY;
-                    let currentDropTarget = null;
-                    
-                    element.addEventListener('touchstart', e => {
-                        if (element.classList.contains('used')) return;
-                        
-                        const touch = e.touches[0];
-                        touchStartX = touch.clientX;
-                        touchStartY = touch.clientY;
-                        this.draggedItemElement = element;
-                        
-                        // 创建一个克隆元素跟随手指移动
-                        const clone = element.cloneNode(true);
-                        clone.style.position = 'fixed';
-                        clone.style.opacity = '0.8';
-                        clone.style.zIndex = '1000';
-                        clone.style.pointerEvents = 'none';
-                        clone.id = 'dragging-clone';
-                        document.body.appendChild(clone);
-                        
-                        // 定位克隆元素
-                        clone.style.left = (touch.clientX - element.offsetWidth / 2) + 'px';
-                        clone.style.top = (touch.clientY - element.offsetHeight / 2) + 'px';
-                    }, { passive: true });
-                    
-                    element.addEventListener('touchmove', e => {
-                        if (element.classList.contains('used')) return;
-                        
-                        const touch = e.touches[0];
-                        const clone = document.getElementById('dragging-clone');
-                        if (clone) {
-                            clone.style.left = (touch.clientX - element.offsetWidth / 2) + 'px';
-                            clone.style.top = (touch.clientY - element.offsetHeight / 2) + 'px';
-                        }
-                        
-                        // 检测是否在目标槽上方
-                        const elementsAtPoint = document.elementsFromPoint(touch.clientX, touch.clientY);
-                        const dropTarget = elementsAtPoint.find(el => el.classList.contains('hiragana-slot'));
-                        
-                        // 移除之前的高亮
-                        if (currentDropTarget && currentDropTarget !== dropTarget) {
-                            currentDropTarget.style.backgroundColor = '';
-                        }
-                        
-                        // 高亮当前目标槽
-                        if (dropTarget && !dropTarget.classList.contains('filled')) {
-                            dropTarget.style.backgroundColor = '#e0e0e0';
-                            currentDropTarget = dropTarget;
-                        } else {
-                            currentDropTarget = null;
-                        }
-                    }, { passive: false });
-                    
-                    element.addEventListener('touchend', e => {
-                        if (element.classList.contains('used')) return;
-                        
-                        const clone = document.getElementById('dragging-clone');
-                        if (clone) {
-                            document.body.removeChild(clone);
-                        }
-                        
-                        // 如果有目标槽，执行放置操作
-                        if (currentDropTarget && !currentDropTarget.classList.contains('filled')) {
-                            const hiragana = element.textContent;
-                            if (!this.model.isHiraganaUsed(hiragana)) {
-                                currentDropTarget.textContent = hiragana;
-                                currentDropTarget.classList.add('filled');
-                                this.filledSlots++;
-                                
-                                // 标记平假名为已使用
-                                this.model.markHiraganaAsUsed(hiragana);
-                                
-                                // 禁用源区域中的对应项
-                                element.classList.add('used');
-                                element.draggable = false;
-                                
-                                // 检查答案是否正确
-                                const isCorrect = this.model.checkAnswer(hiragana, currentDropTarget.dataset.romaji);
-                                currentDropTarget.classList.add(isCorrect ? 'correct' : 'incorrect');
-                                
-                                // 更新分数
-                                const scoreInfo = this.model.updateScore(isCorrect);
-                                this.updateScoreDisplay();
-                                
-                                // 检查是否全部答对
-                                if (this.filledSlots === this.model.totalQuestions && scoreInfo.isAllCorrect) {
-                                    this.showWinMessage();
-                                }
-                            }
-                        }
-                        
-                        // 移除所有高亮
-                        if (currentDropTarget) {
-                            currentDropTarget.style.backgroundColor = '';
-                            currentDropTarget = null;
-                        }
-                    }, { passive: true });
-                }
-
-                handleDragStart(e) {
+                checkCardAnswer(card, input, statusIndicator) {
                     try {
-                        const hiragana = e.target.textContent;
-                        if (!this.model.isHiraganaUsed(hiragana)) {
-                            e.dataTransfer.setData('text/plain', hiragana);
-                            this.draggedItemElement = e.target;
+                        const romaji = input.value.trim();
+                        
+                        // 如果输入为空，不处理
+                        if (!romaji) {
+                            return;
+                        }
+                        
+                        const hiragana = card.dataset.hiragana;
+                        
+                        // 检查答案是否正确
+                        const isCorrect = this.model.checkAnswer(romaji, hiragana);
+                        
+                        // 记录尝试
+                        const scoreInfo = this.model.recordAttempt(hiragana, isCorrect);
+                        
+                        // 更新状态指示器
+                        statusIndicator.className = 'input-status';
+                        statusIndicator.classList.add(isCorrect ? 'status-correct' : 'status-incorrect');
+                        
+                        // 如果正确，禁用输入框
+                        if (isCorrect) {
+                            card.classList.add('correct');
+                            input.disabled = true;
                         } else {
-                            e.preventDefault();
+                            card.classList.add('incorrect');
+                            // 短暂显示错误状态后恢复
+                            setTimeout(() => {
+                                card.classList.remove('incorrect');
+                                input.value = '';
+                                input.focus();
+                            }, 1000);
+                        }
+                        
+                        // 更新分数
+                        this.updateScoreDisplay();
+                        
+                        // 检查是否全部答对
+                        if (scoreInfo.isAllCorrect) {
+                            this.showWinMessage();
                         }
                     } catch (error) {
-                        console.error('Error in handleDragStart:', error);
-                    }
-                }
-
-                handleDrop(e) {
-                    try {
-                        e.preventDefault();
-                        const data = e.dataTransfer.getData('text/plain');
-                        const target = e.target;
-                        
-                        if (!target.textContent && !this.model.isHiraganaUsed(data)) {
-                            target.textContent = data;
-                            target.classList.add('filled');
-                            this.filledSlots++;
-                            
-                            // 标记平假名为已使用
-                            this.model.markHiraganaAsUsed(data);
-                            
-                            // 禁用源区域中的对应项
-                            if (this.draggedItemElement) {
-                                this.draggedItemElement.classList.add('used');
-                                this.draggedItemElement.draggable = false;
-                            }
-                            
-                            // 检查答案是否正确
-                            const isCorrect = this.model.checkAnswer(data, target.dataset.romaji);
-                            target.classList.add(isCorrect ? 'correct' : 'incorrect');
-                            
-                            // 更新分数
-                            const scoreInfo = this.model.updateScore(isCorrect);
-                            this.updateScoreDisplay();
-                            
-                            // 检查是否全部答对
-                            if (this.filledSlots === this.model.totalQuestions && scoreInfo.isAllCorrect) {
-                                this.showWinMessage();
-                            }
-                        }
-                    } catch (error) {
-                        console.error('Error in handleDrop:', error);
+                        console.error('Error in checkCardAnswer:', error);
                     }
                 }
                 
@@ -588,12 +468,6 @@
                             existingMessage.remove();
                         }
                         
-                        // 移除可能存在的克隆元素
-                        const clone = document.getElementById('dragging-clone');
-                        if (clone) {
-                            document.body.removeChild(clone);
-                        }
-                        
                         const controller = new HiraganaController();
                     } catch (error) {
                         console.error('Error resetting game:', error);
@@ -616,8 +490,7 @@
 
                 init() {
                     try {
-                        this.view.renderTargetArea(this.model.hiragana, this.model.romaji);
-                        this.view.renderSourceArea(this.model.shuffledHiragana);
+                        this.view.renderHiraganaArea(this.model.shuffledHiragana);
                         this.view.updateScoreDisplay();
                     } catch (error) {
                         console.error('Error in init:', error);
