@@ -1,231 +1,306 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>平仮名ドラッグ&ドロップ練習</title>
+    <title>平假名练习</title>
     <style>
         body {
-            font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
             padding: 20px;
-            text-align: center;
-            background-color: #f8f9fa;
-            color: #333;
-            display: flex;
-            flex-direction: column;
             min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 20px;
-            font-size: 2em;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-        }
-
         .container {
             display: flex;
-            gap: 20px;
-            flex: 1;
+            gap: 30px;
+            padding: 20px;
+            /* 5个方块 * (80px + 4px边框) + 4个间隔 * 10px = 460px，两个区域加间隔 = 950px */
+            width: 1000px;
+            margin: 80px auto 0; /* 增加上边距，为标题留出空间 */
         }
-
-        .hiragana-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 10px;
-            padding: 15px;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            flex: 2;
+        .page-title {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            margin: 0;
+            color: #333;
+            background-color: rgba(245, 245, 245, 0.9); /* 半透明背景 */
+            padding: 10px 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 1000; /* 确保标题始终在最上层 */
         }
-
-        .drop-zone {
-            border: 2px dashed #cbd5e0;
-            padding: 10px;
-            min-height: 40px;
-            font-size: 24px;
+        .target-area {
+            border: 2px solid #ddd;
             border-radius: 8px;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .drop-zone::after {
-            content: attr(data-romaji);
-            position: absolute;
-            bottom: 2px;
-            right: 5px;
-            font-size: 12px;
-            color: #999;
-            opacity: 0.7;
-        }
-
-        .drop-zone:hover {
-            border-color: #4a5568;
-            background-color: rgba(203, 213, 224, 0.1);
-        }
-
-        .hiragana-pool {
+            padding: 20px;
+            width: 520px;
+            min-height: 600px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
-            flex-wrap: wrap;
-            gap: 8px;
-            padding: 15px;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            flex: 1;
-            max-height: 80vh;
-            overflow-y: auto;
+            gap: 10px;
         }
-
-        .draggable {
-            font-size: 24px;
-            padding: 8px 15px;
-            background: white;
-            border: 1px solid #e2e8f0;
+        .target-area > div {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: flex-start;
+        }
+        .source-area {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            width: 520px;
+            min-height: 600px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-content: flex-start;
+            justify-content: flex-start;
+        }
+        .hiragana-slot {
+            width: 80px;
+            height: 80px;
+            border: 2px dashed #bbb;
             border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 32px;
+            background-color: #fafafa;
+            transition: all 0.2s ease;
+            position: relative;
+            box-sizing: border-box;
+        }
+        .hiragana-slot::after {
+            content: attr(data-romaji);
+            position: absolute;
+            bottom: 4px;
+            font-size: 14px;
+            color: #999;
+        }
+        .hiragana-slot:hover {
+            background-color: #f0f0f0;
+        }
+        .hiragana-item {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border: 2px solid #999;
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             cursor: move;
             user-select: none;
+            font-size: 32px;
             transition: all 0.2s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-sizing: border-box;
         }
-
-        .draggable:hover {
+        .hiragana-item:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
-
-        .draggable.dragging {
-            opacity: 0.6;
-            transform: scale(1.05);
+        /* 添加拖拽后的样式 */
+        .hiragana-slot.filled {
+            border-style: solid;
+            background-color: white;
+            font-size: 32px;
         }
-
-        .row-label {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            color: #666;
-            background: #f0f0f0;
-            border-radius: 6px;
+        .hiragana-slot.correct {
+            border-color: #4CAF50;
+            background-color: #E8F5E9;
+        }
+        .hiragana-slot.incorrect {
+            border-color: #F44336;
+            background-color: #FFEBEE;
         }
     </style>
 </head>
 <body>
-    <h1>平仮名ドラッグ&ドロップ練習</h1>
+    <h1 class="page-title">平假名练习</h1>
     <div class="container">
-        <div class="hiragana-grid" id="hiraganaGrid"></div>
-        <div class="hiragana-pool" id="hiraganaPool"></div>
+        <div id="targetArea" class="target-area"></div>
+        <div id="sourceArea" class="source-area"></div>
     </div>
 
     <script>
-        const hiragana = [
-            'あ','い','う','え','お',
-            'か','き','く','け','こ',
-            'さ','し','す','せ','そ',
-            'た','ち','つ','て','と',
-            'な','に','ぬ','ね','の',
-            'は','ひ','ふ','へ','ほ',
-            'ま','み','む','め','も',
-            'や','ゆ','よ',
-            'ら','り','る','れ','ろ',
-            'わ','を','ん'
-        ];
+        try {
+            // Model
+            class HiraganaModel {
+                constructor() {
+                    this.hiragana = [
+                        ['あ', 'い', 'う', 'え', 'お'],
+                        ['か', 'き', 'く', 'け', 'こ'],
+                        ['さ', 'し', 'す', 'せ', 'そ'],
+                        ['た', 'ち', 'つ', 'て', 'と'],
+                        ['な', 'に', 'ぬ', 'ね', 'の'],
+                        ['は', 'ひ', 'ふ', 'へ', 'ほ'],
+                        ['ま', 'み', 'む', 'め', 'も'],
+                        ['や', 'ゆ', 'よ'],
+                        ['ら', 'り', 'る', 'れ', 'ろ'],
+                        ['わ', 'を', 'ん']
+                    ];
+                    this.romaji = [
+                        ['a', 'i', 'u', 'e', 'o'],
+                        ['ka', 'ki', 'ku', 'ke', 'ko'],
+                        ['sa', 'shi', 'su', 'se', 'so'],
+                        ['ta', 'chi', 'tsu', 'te', 'to'],
+                        ['na', 'ni', 'nu', 'ne', 'no'],
+                        ['ha', 'hi', 'fu', 'he', 'ho'],
+                        ['ma', 'mi', 'mu', 'me', 'mo'],
+                        ['ya', 'yu', 'yo'],
+                        ['ra', 'ri', 'ru', 're', 'ro'],
+                        ['wa', 'wo', 'n']
+                    ];
+                    this.shuffledHiragana = this.shuffle([...this.hiragana.flat()]);
+                    this.hiraganaToRomaji = this.createHiraganaToRomajiMap();
+                }
 
-        const romaji = [
-            'a','i','u','e','o',
-            'ka','ki','ku','ke','ko',
-            'sa','shi','su','se','so',
-            'ta','chi','tsu','te','to',
-            'na','ni','nu','ne','no',
-            'ha','hi','fu','he','ho',
-            'ma','mi','mu','me','mo',
-            'ya','yu','yo',
-            'ra','ri','ru','re','ro',
-            'wa','wo','n'
-        ];
+                createHiraganaToRomajiMap() {
+                    const map = new Map();
+                    this.hiragana.forEach((row, i) => {
+                        row.forEach((char, j) => {
+                            map.set(char, this.romaji[i][j]);
+                        });
+                    });
+                    return map;
+                }
 
-        function createGrid() {
-            const grid = document.getElementById('hiraganaGrid');
-            let currentRow = -1;
-            
-            // Add row label first
-            const label = document.createElement('div');
-            label.className = 'row-label';
-            grid.appendChild(label);
-            
-            hiragana.forEach((char, index) => {
-                if (index % 5 === 0) {
-                    if (index !== 0) {
-                        // Add empty cell to start new row
-                        const label = document.createElement('div');
-                        label.className = 'row-label';
-                        grid.appendChild(label);
+                shuffle(array) {
+                    for (let i = array.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [array[i], array[j]] = [array[j], array[i]];
+                    }
+                    return array;
+                }
+
+                checkAnswer(hiragana, romaji) {
+                    return this.hiraganaToRomaji.get(hiragana) === romaji;
+                }
+            }
+
+            // View
+            class HiraganaView {
+                constructor() {
+                    this.targetArea = document.getElementById('targetArea');
+                    this.sourceArea = document.getElementById('sourceArea');
+                    if (!this.targetArea || !this.sourceArea) {
+                        throw new Error('Required DOM elements not found');
                     }
                 }
-                
-                const dropZone = document.createElement('div');
-                dropZone.className = 'drop-zone';
-                dropZone.dataset.correct = char;
-                dropZone.dataset.romaji = romaji[index];
-                grid.appendChild(dropZone);
-            });
-        }
 
-        function createPool() {
-            const pool = document.getElementById('hiraganaPool');
-            const shuffledHiragana = [...hiragana].sort(() => Math.random() - 0.5);
-            
-            shuffledHiragana.forEach(char => {
-                const draggable = document.createElement('div');
-                draggable.className = 'draggable';
-                draggable.draggable = true;
-                draggable.textContent = char;
-                
-                draggable.addEventListener('dragstart', e => {
-                    draggable.classList.add('dragging');
-                });
-                
-                draggable.addEventListener('dragend', e => {
-                    draggable.classList.remove('dragging');
-                });
-                
-                pool.appendChild(draggable);
-            });
-        }
-
-        function initializeDragAndDrop() {
-            const dropZones = document.querySelectorAll('.drop-zone');
-            
-            dropZones.forEach(zone => {
-                zone.addEventListener('dragover', e => {
-                    e.preventDefault();
-                });
-                
-                zone.addEventListener('drop', e => {
-                    e.preventDefault();
-                    const draggable = document.querySelector('.dragging');
-                    if (draggable) {
-                        if (zone.children.length === 0) {
-                            zone.appendChild(draggable);
-                            if (draggable.textContent === zone.dataset.correct) {
-                                zone.style.backgroundColor = '#e6ffe6';
-                            } else {
-                                zone.style.backgroundColor = '#ffe6e6';
-                            }
-                        }
+                renderTargetArea(hiragana, romaji) {
+                    try {
+                        hiragana.forEach((row, i) => {
+                            const rowDiv = document.createElement('div');
+                            row.forEach((_, j) => {
+                                const slot = document.createElement('div');
+                                slot.className = 'hiragana-slot';
+                                slot.dataset.romaji = romaji[i][j];
+                                slot.addEventListener('dragover', e => e.preventDefault());
+                                slot.addEventListener('drop', e => this.handleDrop(e));
+                                slot.addEventListener('dblclick', e => {
+                                    e.target.textContent = '';
+                                    e.target.classList.remove('filled', 'correct', 'incorrect');
+                                });
+                                rowDiv.appendChild(slot);
+                            });
+                            this.targetArea.appendChild(rowDiv);
+                        });
+                    } catch (error) {
+                        console.error('Error in renderTargetArea:', error);
                     }
-                });
-            });
-        }
+                }
 
-        // Initialize the game
-        createGrid();
-        createPool();
-        initializeDragAndDrop();
+                renderSourceArea(shuffledHiragana) {
+                    try {
+                        shuffledHiragana.forEach(char => {
+                            const item = document.createElement('div');
+                            item.className = 'hiragana-item';
+                            item.draggable = true;
+                            item.textContent = char;
+                            item.addEventListener('dragstart', e => this.handleDragStart(e));
+                            this.sourceArea.appendChild(item);
+                        });
+                    } catch (error) {
+                        console.error('Error in renderSourceArea:', error);
+                    }
+                }
+
+                handleDragStart(e) {
+                    try {
+                        e.dataTransfer.setData('text/plain', e.target.textContent);
+                    } catch (error) {
+                        console.error('Error in handleDragStart:', error);
+                    }
+                }
+
+                handleDrop(e) {
+                    try {
+                        e.preventDefault();
+                        const data = e.dataTransfer.getData('text/plain');
+                        const target = e.target;
+                        
+                        if (!target.textContent) {
+                            target.textContent = data;
+                            target.classList.add('filled');
+                            
+                            // 检查答案是否正确
+                            const isCorrect = this.model.checkAnswer(data, target.dataset.romaji);
+                            target.classList.add(isCorrect ? 'correct' : 'incorrect');
+                        }
+                    } catch (error) {
+                        console.error('Error in handleDrop:', error);
+                    }
+                }
+            }
+
+            // Controller
+            class HiraganaController {
+                constructor() {
+                    try {
+                        this.model = new HiraganaModel();
+                        this.view = new HiraganaView();
+                        this.view.model = this.model; // 将model引用传递给view
+                        this.init();
+                    } catch (error) {
+                        console.error('Error initializing HiraganaController:', error);
+                    }
+                }
+
+                init() {
+                    try {
+                        this.view.renderTargetArea(this.model.hiragana, this.model.romaji);
+                        this.view.renderSourceArea(this.model.shuffledHiragana);
+                    } catch (error) {
+                        console.error('Error in init:', error);
+                    }
+                }
+            }
+
+            // Initialize app
+            window.addEventListener('DOMContentLoaded', () => {
+                try {
+                    new HiraganaController();
+                } catch (error) {
+                    console.error('Error initializing app:', error);
+                }
+            });
+        } catch (error) {
+            console.error('Critical error:', error);
+        }
     </script>
 </body>
 </html>
