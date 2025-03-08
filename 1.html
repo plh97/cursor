@@ -80,6 +80,10 @@
             transition: all 0.2s ease;
             position: relative;
             box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
         .hiragana-slot::after {
             content: attr(data-romaji);
@@ -103,6 +107,12 @@
             background-color: white;
             cursor: grab;
             transition: all 0.2s ease;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            touch-action: none;
+            box-sizing: border-box;
         }
         .hiragana-item:hover {
             background-color: #f9f9f9;
@@ -164,9 +174,43 @@
             z-index: 2000;
             animation: fadeIn 0.5s ease-in;
         }
+        .hiragana-item.used {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
+        }
+        
+        /* 移动设备适配 */
+        @media (max-width: 1024px) {
+            .container {
+                flex-direction: column;
+                width: 100%;
+                gap: 20px;
+            }
+            .target-area, .source-area {
+                width: 100%;
+                min-height: auto;
+            }
+            .hiragana-slot, .hiragana-item {
+                width: 60px;
+                height: 60px;
+                font-size: 24px;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .hiragana-slot, .hiragana-item {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+            .hiragana-slot::after {
+                font-size: 12px;
+            }
         }
     </style>
 </head>
@@ -219,6 +263,9 @@
                     // 计分相关
                     this.totalQuestions = this.shuffledHiragana.length;
                     this.correctAnswers = 0;
+                    
+                    // 记录已使用的平假名
+                    this.usedHiragana = new Set();
                 }
                 
                 createHiraganaToRomajiMap() {
@@ -253,6 +300,18 @@
                         isAllCorrect: this.correctAnswers === this.totalQuestions
                     };
                 }
+                
+                markHiraganaAsUsed(hiragana) {
+                    this.usedHiragana.add(hiragana);
+                }
+                
+                isHiraganaUsed(hiragana) {
+                    return this.usedHiragana.has(hiragana);
+                }
+                
+                removeHiraganaFromUsed(hiragana) {
+                    this.usedHiragana.delete(hiragana);
+                }
             }
 
             // View
@@ -269,6 +328,22 @@
                     
                     this.resetButton.addEventListener('click', () => this.resetGame());
                     this.filledSlots = 0;
+                    this.draggedItemElement = null;
+                    
+                    // 检测是否为触摸设备
+                    this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+                    if (this.isTouchDevice) {
+                        this.setupTouchEvents();
+                    }
+                }
+                
+                setupTouchEvents() {
+                    // 为移动设备添加触摸事件支持
+                    document.addEventListener('touchmove', function(e) {
+                        if (e.target.classList.contains('hiragana-item') && !e.target.classList.contains('used')) {
+                            e.preventDefault(); // 防止页面滚动
+                        }
+                    }, { passive: false });
                 }
 
                 renderTargetArea(hiragana, romaji) {
@@ -288,6 +363,20 @@
                                             this.model.correctAnswers--;
                                         }
                                         this.filledSlots--;
+                                        
+                                        // 将平假名标记为未使用
+                                        const hiragana = e.target.textContent;
+                                        this.model.removeHiraganaFromUsed(hiragana);
+                                        
+                                        // 恢复源区域中对应的平假名项
+                                        const sourceItems = this.sourceArea.querySelectorAll('.hiragana-item');
+                                        sourceItems.forEach(item => {
+                                            if (item.textContent === hiragana) {
+                                                item.classList.remove('used');
+                                                item.draggable = true;
+                                            }
+                                        });
+                                        
                                         this.updateScoreDisplay();
                                     }
                                     e.target.textContent = '';
@@ -311,16 +400,128 @@
                             item.draggable = true;
                             item.textContent = char;
                             item.addEventListener('dragstart', e => this.handleDragStart(e));
+                            
+                            // 添加触摸事件支持
+                            if (this.isTouchDevice) {
+                                this.addTouchDragEvents(item);
+                            }
+                            
                             this.sourceArea.appendChild(item);
                         });
                     } catch (error) {
                         console.error('Error in renderSourceArea:', error);
                     }
                 }
+                
+                addTouchDragEvents(element) {
+                    let touchStartX, touchStartY;
+                    let currentDropTarget = null;
+                    
+                    element.addEventListener('touchstart', e => {
+                        if (element.classList.contains('used')) return;
+                        
+                        const touch = e.touches[0];
+                        touchStartX = touch.clientX;
+                        touchStartY = touch.clientY;
+                        this.draggedItemElement = element;
+                        
+                        // 创建一个克隆元素跟随手指移动
+                        const clone = element.cloneNode(true);
+                        clone.style.position = 'fixed';
+                        clone.style.opacity = '0.8';
+                        clone.style.zIndex = '1000';
+                        clone.style.pointerEvents = 'none';
+                        clone.id = 'dragging-clone';
+                        document.body.appendChild(clone);
+                        
+                        // 定位克隆元素
+                        clone.style.left = (touch.clientX - element.offsetWidth / 2) + 'px';
+                        clone.style.top = (touch.clientY - element.offsetHeight / 2) + 'px';
+                    }, { passive: true });
+                    
+                    element.addEventListener('touchmove', e => {
+                        if (element.classList.contains('used')) return;
+                        
+                        const touch = e.touches[0];
+                        const clone = document.getElementById('dragging-clone');
+                        if (clone) {
+                            clone.style.left = (touch.clientX - element.offsetWidth / 2) + 'px';
+                            clone.style.top = (touch.clientY - element.offsetHeight / 2) + 'px';
+                        }
+                        
+                        // 检测是否在目标槽上方
+                        const elementsAtPoint = document.elementsFromPoint(touch.clientX, touch.clientY);
+                        const dropTarget = elementsAtPoint.find(el => el.classList.contains('hiragana-slot'));
+                        
+                        // 移除之前的高亮
+                        if (currentDropTarget && currentDropTarget !== dropTarget) {
+                            currentDropTarget.style.backgroundColor = '';
+                        }
+                        
+                        // 高亮当前目标槽
+                        if (dropTarget && !dropTarget.classList.contains('filled')) {
+                            dropTarget.style.backgroundColor = '#e0e0e0';
+                            currentDropTarget = dropTarget;
+                        } else {
+                            currentDropTarget = null;
+                        }
+                    }, { passive: false });
+                    
+                    element.addEventListener('touchend', e => {
+                        if (element.classList.contains('used')) return;
+                        
+                        const clone = document.getElementById('dragging-clone');
+                        if (clone) {
+                            document.body.removeChild(clone);
+                        }
+                        
+                        // 如果有目标槽，执行放置操作
+                        if (currentDropTarget && !currentDropTarget.classList.contains('filled')) {
+                            const hiragana = element.textContent;
+                            if (!this.model.isHiraganaUsed(hiragana)) {
+                                currentDropTarget.textContent = hiragana;
+                                currentDropTarget.classList.add('filled');
+                                this.filledSlots++;
+                                
+                                // 标记平假名为已使用
+                                this.model.markHiraganaAsUsed(hiragana);
+                                
+                                // 禁用源区域中的对应项
+                                element.classList.add('used');
+                                element.draggable = false;
+                                
+                                // 检查答案是否正确
+                                const isCorrect = this.model.checkAnswer(hiragana, currentDropTarget.dataset.romaji);
+                                currentDropTarget.classList.add(isCorrect ? 'correct' : 'incorrect');
+                                
+                                // 更新分数
+                                const scoreInfo = this.model.updateScore(isCorrect);
+                                this.updateScoreDisplay();
+                                
+                                // 检查是否全部答对
+                                if (this.filledSlots === this.model.totalQuestions && scoreInfo.isAllCorrect) {
+                                    this.showWinMessage();
+                                }
+                            }
+                        }
+                        
+                        // 移除所有高亮
+                        if (currentDropTarget) {
+                            currentDropTarget.style.backgroundColor = '';
+                            currentDropTarget = null;
+                        }
+                    }, { passive: true });
+                }
 
                 handleDragStart(e) {
                     try {
-                        e.dataTransfer.setData('text/plain', e.target.textContent);
+                        const hiragana = e.target.textContent;
+                        if (!this.model.isHiraganaUsed(hiragana)) {
+                            e.dataTransfer.setData('text/plain', hiragana);
+                            this.draggedItemElement = e.target;
+                        } else {
+                            e.preventDefault();
+                        }
                     } catch (error) {
                         console.error('Error in handleDragStart:', error);
                     }
@@ -332,10 +533,19 @@
                         const data = e.dataTransfer.getData('text/plain');
                         const target = e.target;
                         
-                        if (!target.textContent) {
+                        if (!target.textContent && !this.model.isHiraganaUsed(data)) {
                             target.textContent = data;
                             target.classList.add('filled');
                             this.filledSlots++;
+                            
+                            // 标记平假名为已使用
+                            this.model.markHiraganaAsUsed(data);
+                            
+                            // 禁用源区域中的对应项
+                            if (this.draggedItemElement) {
+                                this.draggedItemElement.classList.add('used');
+                                this.draggedItemElement.draggable = false;
+                            }
                             
                             // 检查答案是否正确
                             const isCorrect = this.model.checkAnswer(data, target.dataset.romaji);
@@ -378,6 +588,12 @@
                             existingMessage.remove();
                         }
                         
+                        // 移除可能存在的克隆元素
+                        const clone = document.getElementById('dragging-clone');
+                        if (clone) {
+                            document.body.removeChild(clone);
+                        }
+                        
                         const controller = new HiraganaController();
                     } catch (error) {
                         console.error('Error resetting game:', error);
@@ -414,7 +630,7 @@
                 try {
                     new HiraganaController();
                 } catch (error) {
-                    console.error('Error initializing app:', error);
+                    console.error('Critical error:', error);
                 }
             });
         } catch (error) {
